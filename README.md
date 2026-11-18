@@ -118,7 +118,7 @@ AGENT_kimi='kimi run "请完整读取并严格执行 {TASK}。"'  # 告诉脚本
 
 ## 7. 持续优化
 
-每做完一件，总调度在 `<店铺目录>/workflow/improvements.md` 记一笔：卡在哪、你改了什么、该改哪条规则、上架后的数据。**同一类问题出现两次，就改 skill**，写进 `SKILL.md` 末尾的变更记录。欢迎提 issue 和 PR。
+每做完一件，总调度在 `<店铺目录>/workflow/improvements.md` 记一笔：卡在哪、你改了什么、该改哪条规则、上架后的数据。**你明确不满意的当场改 skill，其他问题同一类出现两次再改**，写进 `SKILL.md` 末尾的变更记录。欢迎提 issue 和 PR。
 
 ## 8. 红线（节选，全文见 [`references/redlines.md`](skills/xianyu-shop/references/redlines.md)）
 
