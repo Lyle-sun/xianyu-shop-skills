@@ -95,7 +95,7 @@ pack)
   printf '亲，感谢下单，网盘自取👇\n\n链接：%s\n\n资料容易失效，请及时保存\n' "$link" > "$d/delivery.txt"
   printf '{"category":"电子资料","price":%s,"share_url":"%s"}\n' "$price" "$link" > "$d/manifest.json"
   sips -s format jpeg -s formatOptions 85 -Z 1000 "$d/main.png" --out "$d/main-upload.jpg" >/dev/null
-  echo "标题：$(cat $d/title.txt)（$(cat $d/title.txt | tr -d '\n' | wc -m | tr -d ' ') 字）"; echo "价格：$price  发货：$link"; echo "配图：$(ls $d/shots/*.jpg 2>/dev/null | wc -l | tr -d ' ') 张";;
+  echo "标题：$(cat $d/title.txt)（$(python3 -c 'import sys;print(len(open(sys.argv[1],encoding="utf-8").read().strip()))' "$d/title.txt") 字）"; echo "价格：$price  发货：$link"; echo "配图：$(ls $d/shots/*.jpg 2>/dev/null | wc -l | tr -d ' ') 张";;
 publish)
   d=$1; shift; python3 "$HERE/yidian_api.py" publish "$d" --skip-review "$@";;
 price)
