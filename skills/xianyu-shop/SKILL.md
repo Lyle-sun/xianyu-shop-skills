@@ -68,7 +68,7 @@ shop.sh dispatch writer "$t"
 - 数据：上架 N 天，浏览/想要/成交 …
 ```
 
-同一类问题出现两次，就改对应的 skill、模板或脚本，并在本 skill 末尾的「变更记录」写一行。改之前先备份。
+店主明确不满意的（比如「这张图好丑」），当场改对应的 skill、模板或脚本；其他问题同一类出现两次再改，并在本 skill 末尾的「变更记录」写一行。改之前先备份。
 
 改完同步给人看的版本（配置里填了才做）：本地 `$SHOP_DIR/workflow/xianyu-shop-manual.md`；飞书文档 `FEISHU_MANUAL_DOC`（用 `lark-cli docs +update --command overwrite --doc-format markdown` 覆盖，正文不带一级标题），并重打 skill 压缩包附在文档末尾；附录页 `FEISHU_APPENDIX_DOC` 重建 skill 全文。
 
@@ -82,3 +82,4 @@ shop.sh dispatch writer "$t"
 ## 变更记录
 
 - 2026-11-18 v1：从 11-15 批量工具包升级。加入首次设置和体检、角色配置、单品 8 步流程、5 个派活模板、订单查询、复盘机制。
+- 2026-11-18 v1.1：交付说明卡规则重写（同主图配色、摆货、三步流程、提醒放底部）；店主不满意的当场改 skill；pack 标题按字符计数。
