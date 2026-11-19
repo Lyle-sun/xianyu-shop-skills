@@ -34,7 +34,7 @@ description: 闲鱼虚拟资料店的总控流程：首次设置引导、开工�
 | 步 | 谁 | 怎么做 | 交付 | 验收要点 |
 |---|---|---|---|---|
 | 1 选品 | 店主 + 总调度 | 对标店找卖得好的品，记进线索库；只搜店主给的词 | 线索库一行：对标链接、货源、状态 | 不在红线品类里 |
-| 2 查货源 | 货源 | `shop.sh task sourcing-check <代号> BENCHMARK_URL=… SOURCE=…`（SOURCE 写网盘里的文件/文件夹名，或夸克分享链接） → `dispatch sourcer` | `check.md` | 每个文件都有结论；有别人出处的剔掉。**整件不能做就停在这里，告诉店主为什么** |
+| 2 查货源 + 打标签 | 货源 | `shop.sh task sourcing-check <代号> BENCHMARK_URL=… SOURCE=…`（SOURCE 写网盘里的文件/文件夹名，或夸克分享链接） → `dispatch sourcer` | `check.md`、`tags.json` | 品类标签按 [taxonomy.md](references/taxonomy.md) 填齐；每个文件都有结论；有别人出处的剔掉。**整件不能做就停在这里，告诉店主为什么** |
 | 3 下载转页 | 货源 | `task fetch-pages <代号>` → `dispatch sourcer` | `pages/` + `pages/index.md` | 图清楚、无水印；每个文件至少一页 |
 | 4 写文案 | 写手 | `task copy <代号> BENCHMARK_URL=…` → `dispatch writer` | `listing.md` | 标题 25–30 字；份数页数和 check.md 一致；无假年份；老教材写清 |
 | 5 出图 | 设计 | `task images <代号>` → `dispatch designer` | `main.png`、`shots/`、`image-notes.md` | 3:4 主图两条字带；主图页不和第一张配图重复；配图全是真实页面；最后一张是交付卡 |
@@ -77,6 +77,7 @@ shop.sh dispatch writer "$t"
 - [references/onboarding.md](references/onboarding.md)：首次设置
 - [references/redlines.md](references/redlines.md)：红线
 - [references/tools.md](references/tools.md)：工具说明（大白话 + 命令）
+- [references/taxonomy.md](references/taxonomy.md)：品类标签（大类、细分、年份、新旧…），品类测试靠它
 - `templates/`：派活模板；`_rules.md` 会自动拼进每张任务单
 
 ## 变更记录
@@ -85,3 +86,4 @@ shop.sh dispatch writer "$t"
 - 2026-11-18 v1.1：交付说明卡规则重写（同主图配色、摆货、三步流程、提醒放底部）；店主不满意的当场改 skill；pack 标题按字符计数。
 - 2026-11-18 v1.2：shop-log 挪到店铺目录（沙箱里的写手也能写）；查货源模板去掉会被带进任务单的提示语。
 - 2026-11-19 v1.3：加本机工作台（流水线看板、派活/返工、预演+上架、订单、在售、改进记录、体检、归档）。
+- 2026-11-19 v1.4：加品类标签（taxonomy.md）；查货源时打标签，上架后并入 data/catalog.json；工作台加「品类」页按标签比数据。

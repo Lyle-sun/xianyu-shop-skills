@@ -211,6 +211,51 @@ def publish(code, price, dry):
     return {"ok": rc2 == 0, "out": out + "\n\n" + out2}
 
 
+_orders_cache = {"t": 0, "rows": []}
+
+
+def all_orders():
+    if time.time() - _orders_cache["t"] > 300:
+        os.environ.update({k: v for k, v in ENV.items() if k.startswith("YIDIAN_")})
+        sys.path.insert(0, os.path.dirname(YIDIAN))
+        import yidian_api
+        _orders_cache.update(t=time.time(), rows=yidian_api.list_orders(None, 500))
+    return _orders_cache["rows"]
+
+
+def categories():
+    cat = {}
+    try: cat = json.load(open(os.path.join(SHOP, "data", "catalog.json"), encoding="utf-8"))
+    except Exception: pass
+    stats, latest = {}, ""
+    import csv
+    try:
+        for r in csv.DictReader(open(os.path.join(SHOP, "data", "stats", "daily.csv"), encoding="utf-8")):
+            if r["date"] >= latest:
+                if r["date"] > latest: latest, stats = r["date"], {}
+                stats[r["goods_id"]] = r
+    except Exception: pass
+    od = {}
+    try:
+        for o in all_orders():
+            if o["status"] in ("交易关闭", "退款中"): continue
+            g = str(o["goods_id"]); x = od.setdefault(g, [0, 0.0]); x[0] += 1; x[1] += float(o["money"] or 0)
+    except Exception as e:
+        print("orders:", e)
+    rows = []
+    now = time.time()
+    for gid, st in stats.items():
+        t = cat.get(gid, {})
+        try: days = max(1.0, (now - time.mktime(time.strptime(st["listed_at"], "%Y-%m-%d %H:%M:%S"))) / 86400)
+        except Exception: days = 1.0
+        n, money = od.get(gid, [0, 0.0])
+        rows.append({"goods_id": gid, "title": st["title"], "price": st["price"], "listed_at": st["listed_at"], "days": round(days, 1),
+                     "exposure": int(st["exposureNum"] or 0), "browse": int(st["browseCount"] or 0), "want": int(st["wantNum"] or 0),
+                     "orders": n, "money": round(money, 2),
+                     **{k: t.get(k) for k in ("category", "sub", "stage", "year", "edition", "format", "source_shop", "confidence", "basis")}})
+    return {"date": latest, "tagged": sum(1 for r in rows if r["category"]), "rows": rows}
+
+
 def improvements(add=None):
     p = os.path.join(SHOP, "workflow", "improvements.md")
     if add:
@@ -262,6 +307,8 @@ class H(BaseHTTPRequestHandler):
                 return self.send(200, {"out": s[-int(q.get("n", 6000)):]})
             if u.path == "/api/improvements":
                 return self.send(200, {"out": improvements()})
+            if u.path == "/api/categories":
+                return self.send(200, categories())
             if u.path.startswith("/file/"):
                 rel = urllib.parse.unquote(u.path[6:])
                 p = os.path.realpath(os.path.join(ASSETS, rel))
@@ -290,6 +337,9 @@ class H(BaseHTTPRequestHandler):
                 if b.get("on", True): open(f, "w").write(time.strftime("%Y-%m-%d %H:%M:%S"))
                 elif os.path.exists(f): os.remove(f)
                 return self.send(200, {"ok": True})
+            if self.path == "/api/stats":
+                out, rc = sh("stats", timeout=300); _orders_cache["t"] = 0
+                return self.send(200, {"out": out, "ok": rc == 0})
             if self.path == "/api/price":
                 out, _ = sh("price")
                 return self.send(200, {"price": out.strip()})

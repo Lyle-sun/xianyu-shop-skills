@@ -68,6 +68,7 @@ details summary{cursor:pointer;color:var(--blue)}
   <h1>闲鱼工作台</h1><span class="shop" id="shop"></span>
   <nav id="nav">
     <button data-v="pipe" class="on">流水线</button>
+    <button data-v="cat">品类</button>
     <button data-v="orders">订单</button>
     <button data-v="live">在售</button>
     <button data-v="imp">改进记录</button>
@@ -97,6 +98,21 @@ details summary{cursor:pointer;color:var(--blue)}
     <h2 id="h-todo">进行中</h2><div class="grid" id="g-todo"></div>
     <h2 id="h-pub" style="display:none">已上架</h2><div class="grid" id="g-pub"></div>
     <details style="margin-top:22px"><summary id="h-shelf">放弃 / 归档</summary><div class="grid" id="g-shelf" style="margin-top:10px"></div></details>
+  </section>
+  <section id="v-cat" hidden>
+    <div class="bar">
+      <span>按</span>
+      <select id="cg" onchange="renderCat()" style="font:inherit;padding:5px 8px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--ink)">
+        <option value="category">大类</option><option value="category+edition">大类 + 新旧</option><option value="sub">细分</option>
+        <option value="stage">学段</option><option value="format">格式</option><option value="source_shop">来源对标店</option><option value="edition">新旧</option>
+      </select><span>分组</span>
+      <button class="btn" onclick="pullStats()">拉最新数据</button>
+      <span class="muted" id="cat-meta"></span>
+    </div>
+    <div class="box" style="overflow-x:auto"><table id="cat-t"></table></div>
+    <h2 id="cat-h"></h2>
+    <div class="box" style="overflow-x:auto"><table id="cat-items"></table></div>
+    <p class="muted">浏览、想要、曝光是易店给的上架以来累计数；「日均浏览」= 浏览 ÷ 上架天数，新老商品能放在一起比。成交按易店订单算，不含关闭和退款。</p>
   </section>
   <section id="v-orders" hidden>
     <div class="bar"><span>最近</span><input id="days" value="7" style="width:60px"><span>天</span><button class="btn" onclick="loadOrders()">刷新</button></div>
@@ -133,7 +149,7 @@ async function api(path,body){const r=await fetch(path,body?{method:"POST",heade
 document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{
   document.querySelectorAll("nav button").forEach(x=>x.classList.toggle("on",x===b));
   document.querySelectorAll("main>section").forEach(s=>s.hidden=s.id!=="v-"+b.dataset.v);
-  ({orders:loadOrders,live:loadLive,imp:loadImp,doc:()=>{}})[b.dataset.v]?.();
+  ({cat:loadCat,orders:loadOrders,live:loadLive,imp:loadImp,doc:()=>{}})[b.dataset.v]?.();
 });
 
 async function load(){
@@ -216,6 +232,25 @@ async function loadLive(){$("live").textContent="加载中…";try{$("live").tex
 async function loadImp(){$("imp").textContent=(await api("/api/improvements")).out}
 async function addImp(){const t=$("imp-new").value.trim();if(!t)return;$("imp").textContent=(await api("/api/improvements",{text:t})).out;$("imp-new").value="";toast("记下了")}
 async function loadDoctor(){$("doctor").textContent="体检中…（约半分钟）";const r=await api("/api/doctor");$("doctor").textContent=r.out}
+
+let CAT=null,catSel=null;
+async function loadCat(){$("cat-meta").textContent="加载中…";try{CAT=await api("/api/categories")}catch(e){$("cat-meta").textContent=e.message;return}renderCat()}
+async function pullStats(){$("cat-meta").textContent="正在从易店拉数据…";const r=await api("/api/stats",{});toast(r.ok?"已更新":"拉取失败");loadCat()}
+function gkey(r,g){return g.split("+").map(k=>r[k]??"未标").join(" · ")}
+function renderCat(){
+  if(!CAT)return;const g=$("cg").value,rows=CAT.rows,groups={};
+  $("cat-meta").textContent=`数据日期 ${CAT.date}｜在售 ${rows.length} 件｜已打标签 ${CAT.tagged} 件`;
+  rows.forEach(r=>{const k=gkey(r,g);(groups[k]=groups[k]||[]).push(r)});
+  const agg=Object.entries(groups).map(([k,a])=>{const s=f=>a.reduce((x,r)=>x+(+r[f]||0),0);
+    return {k,n:a.length,browse:s("browse"),want:s("want"),exp:s("exposure"),orders:s("orders"),money:s("money"),bpd:a.reduce((x,r)=>x+r.browse/r.days,0)/a.length}}).sort((a,b)=>b.bpd-a.bpd);
+  const f1=v=>v.toFixed(1);
+  $("cat-t").innerHTML=`<tr><th>${$("cg").selectedOptions[0].text}</th><th>件数</th><th>日均浏览/件</th><th>总浏览</th><th>想要</th><th>成交单</th><th>成交额</th></tr>`+
+    agg.map(a=>`<tr style="cursor:pointer${catSel===a.k?";background:var(--blue-bg)":""}" onclick="catSel='${esc(a.k)}';renderCat()"><td>${esc(a.k)}</td><td>${a.n}</td><td><b>${f1(a.bpd)}</b></td><td>${a.browse}</td><td>${a.want}</td><td>${a.orders}</td><td>¥${a.money.toFixed(2)}</td></tr>`).join("");
+  const list=catSel&&groups[catSel]?groups[catSel]:rows.slice().sort((a,b)=>b.browse/b.days-a.browse/a.days).slice(0,20);
+  $("cat-h").textContent=catSel&&groups[catSel]?`「${catSel}」里的商品（${list.length}）`:"日均浏览最高的 20 件（点上表某一行看那一组）";
+  $("cat-items").innerHTML=`<tr><th>商品</th><th>大类</th><th>细分</th><th>新旧</th><th>年份</th><th>上架天数</th><th>日均浏览</th><th>想要</th><th>成交</th><th>把握</th></tr>`+
+    list.sort((a,b)=>b.browse/b.days-a.browse/a.days).map(r=>`<tr title="${esc(r.basis||"")}"><td>${esc(r.title)}<div class="code">${r.goods_id} · ¥${esc(r.price)}</div></td><td>${esc(r.category||"未标")}</td><td>${esc(r.sub||"")}</td><td>${esc(r.edition||"")}</td><td>${esc(r.year??"")}</td><td>${r.days}</td><td><b>${f1(r.browse/r.days)}</b></td><td>${r.want}</td><td>${r.orders}</td><td>${esc(r.confidence||"")}</td></tr>`).join("");
+}
 load();setInterval(load,15000);
 </script>
 </body>

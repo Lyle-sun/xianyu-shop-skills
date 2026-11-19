@@ -98,7 +98,21 @@ pack)
   sips -s format jpeg -s formatOptions 85 -Z 1000 "$d/main.png" --out "$d/main-upload.jpg" >/dev/null
   echo "标题：$(cat $d/title.txt)（$(python3 -c 'import sys;print(len(open(sys.argv[1],encoding="utf-8").read().strip()))' "$d/title.txt") 字）"; echo "价格：$price  发货：$link"; echo "配图：$(ls $d/shots/*.jpg 2>/dev/null | wc -l | tr -d ' ') 张";;
 publish)
-  d=$1; shift; python3 "$HERE/yidian_api.py" publish "$d" --skip-review "$@";;
+  d=$1; shift; python3 "$HERE/yidian_api.py" publish "$d" --skip-review "$@" || exit $?
+  # 上架成功后把品类标签并进 data/catalog.json
+  if [ -f "$d/published.json" ] && [ -f "$d/tags.json" ]; then
+    python3 - "$d" "$SHOP_DIR/data/catalog.json" <<'PY'
+import json,os,sys
+d,cp=sys.argv[1],sys.argv[2]
+pub=json.load(open(f"{d}/published.json")); tags=json.load(open(f"{d}/tags.json",encoding="utf-8"))
+gid=str(pub.get("goods_id") or "")
+if gid:
+    cat=json.load(open(cp,encoding="utf-8")) if os.path.exists(cp) else {}
+    cat[gid]={"title":pub.get("title"),**tags}
+    os.makedirs(os.path.dirname(cp),exist_ok=True); json.dump(cat,open(cp,"w",encoding="utf-8"),ensure_ascii=False,indent=1)
+    print("品类标签已记入 catalog.json：",tags.get("category"),tags.get("sub"),tags.get("edition"))
+PY
+  fi;;
 price)
   python3 -c "import random;print(round(random.uniform($PRICE_MIN,$PRICE_MAX),2))";;
 stats)  python3 "$HERE/daily_stats.py";;
