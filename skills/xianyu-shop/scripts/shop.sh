@@ -117,7 +117,8 @@ price)
   python3 -c "import random;print(round(random.uniform($PRICE_MIN,$PRICE_MAX),2))";;
 stats)  python3 "$HERE/daily_stats.py";;
 workbench)
-  W="${SKILL:A:h:h}/workbench/server.py"; [ -f "$W" ] || { echo "没找到工作台：$W（要从仓库安装 skill）"; exit 1; }
+  W="${WORKBENCH_DIR:-$HOME/Desktop/xianyu-shop-workbench}/server.py"
+  [ -f "$W" ] || { echo "没找到工作台：$W。先 git clone 工作台仓库，或在 shop-config.env 里写 WORKBENCH_DIR"; exit 1; }
   SHOP_CONFIG="$CONF" exec python3 "$W" "${1:-8765}";;
 orders) python3 "$HERE/yidian_api.py" orders ${1:-2};;
 *) sed -n 2,13p "$0";;

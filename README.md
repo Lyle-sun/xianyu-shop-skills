@@ -105,17 +105,9 @@ $S orders 2                               # 最近 2 天订单（不显示买家
 
 `shop.sh` 的全部命令见 [`references/tools.md`](skills/xianyu-shop/references/tools.md)。
 
-## 6. 工作台（一个页面管全店）
+## 6. 工作台
 
-```bash
-~/.agents/skills/xianyu-shop/scripts/shop.sh workbench     # 打开 http://127.0.0.1:8765
-```
-
-- **流水线**：每件货一张卡片，6 格进度（查货源 · 转页 · 文案 · 出图 · 发货链接 · 上架），在跑的活标黄。点开能看主图、配图、标题正文、发货链接、查货结论和任务日志。
-- **派活**：卡片里直接点「派活」，可以写补充说明；能并行的两步会给「同时派」按钮；不满意就点「返工」让某一步重做。
-- **上架**：填价格或点「随机」，先预演，确认后再正式上架，自动配好发货。已上架的不会重复上。
-- **订单 / 在售 / 改进记录 / 体检**：各一个标签页。改进记录里可以直接记一笔，总调度会照着改 skill。
-- 只监听本机 127.0.0.1，不显示任何 token；「归档」只做标记，不删文件。
+工作台（一个网页看全店：流水线、品类数据、订单、改进记录）是单独的仓库，不在这里。装好它以后用 `shop.sh workbench` 打开；位置写在 `shop-config.env` 的 `WORKBENCH_DIR`。没有工作台，所有事也都能用 `shop.sh` 命令做。
 
 ## 7. 换成别的 agent
 
@@ -158,7 +150,6 @@ skills/
   xianyu-shop/            总控：SKILL.md、references/、templates/（5 个派活模板）、scripts/shop.sh
   listing-copy-mimic/     文案（爆款样例要你自己收集，见 references/README.md）
   xianyu-main-image/      主图（render.py + templates/main.html + examples/）
-workbench/                本机工作台（server.py + index.html，只用 Python 标准库）
 setup/setup-libreoffice.sh
 install.sh
 ```
