@@ -86,6 +86,19 @@ def list_timed():
     return [{"id": x.get("id"), "title": x["store_name"], "price": x["price"], "at": x.get("dsfabu_time")} for x in j["data"]["list"]]
 
 
+def free_uploads(urls):
+    """删掉易店「照片存储」里这些上传记录（易店上限 200 条）。只删记录，不删商品：
+    闲鱼上架时会把图转存到自己的 bao/uploaded 地址，商品不再引用这些上传记录（2026-11-19 实测）。"""
+    urls = set(urls); ids = []
+    for page in range(1, 10):
+        d = req("GET", "/adminapi/file/file?" + urllib.parse.urlencode({"page": page, "limit": 50, "pid": 0}))["data"]
+        ids += [str(r["att_id"]) for r in d["list"] if r.get("att_dir") in urls]
+        if len(d["list"]) < 50: break
+    if ids:
+        req("POST", "/adminapi/file/file/delete", {"ids": ",".join(ids)})
+    return len(ids)
+
+
 def publish(d, dry=False, skip_review=False, at=None):
     """at="YYYY-MM-DD HH:MM:SS" 时用易店自带的定时发布：先进「定时上架商品」，到点由易店发到闲鱼。"""
     if os.path.exists(f"{d}/published.json"):
@@ -156,7 +169,11 @@ def publish(d, dry=False, skip_review=False, at=None):
     req("POST", "/adminapi/product/product/0", dv)
     json.dump({"goods_id": gid, "title": title, "price": price, "images": urls,
                "time": time.strftime("%Y-%m-%d %H:%M:%S")}, open(f"{d}/published.json", "w"), ensure_ascii=False, indent=1)
-    print(f"已上架并配置自动发货：{gid}  {title}")
+    try:
+        n = free_uploads(urls)
+        print(f"已上架并配置自动发货：{gid}  {title}（清掉易店照片存储 {n} 条上传记录）")
+    except Exception as e:
+        print(f"已上架并配置自动发货：{gid}  {title}（清理照片存储失败，不影响商品：{e}）")
 
 
 ORDER_STATUS = {1: "待发货", 2: "待收货", 3: "交易完成", 4: "交易关闭", 5: "退款中"}
@@ -214,6 +231,13 @@ if __name__ == "__main__":
         L = list_timed()
         for x in L: print(x["id"], x["at"], x["price"], x["title"])
         print(f"共 {len(L)} 个定时商品"); sys.exit(0)
+    if a and a[0] == "free-uploads":  # 给已上架的包补清照片存储：free-uploads <包目录>...
+        import glob as _g
+        for d in a[1:]:
+            pj = os.path.join(d, "published.json")
+            if os.path.exists(pj) and json.load(open(pj)).get("goods_id"):
+                print(d, "清掉", free_uploads(json.load(open(pj))["images"]), "条")
+        sys.exit(0)
     if not a or a[0] not in ("list", "publish", "show", "update", "offshelf", "onshelf"):
         print(__doc__); sys.exit(1)
     if a[0] == "list":
