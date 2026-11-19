@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>闲鱼工作台</title>
+<style>
+:root{--bg:#f6f5f1;--card:#fff;--ink:#1d1d1b;--muted:#6b6a65;--line:#e4e2da;--blue:#2054c7;--blue-bg:#e8eefb;--yellow:#ffe14d;--green:#2f7d4f;--green-bg:#e3f2e8;--red:#b3261e;--red-bg:#fbe9e7;--amber:#8a5a00;--amber-bg:#fff3d6}
+@media (prefers-color-scheme:dark){:root{--bg:#171715;--card:#22221f;--ink:#ecebe6;--muted:#a3a19a;--line:#3a3934;--blue:#8fb0ff;--blue-bg:#1e2a45;--green:#7fd19c;--green-bg:#1d3326;--red:#ff9b91;--red-bg:#3d1f1c;--amber:#ffc95c;--amber-bg:#3b2f14}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.6 -apple-system,"PingFang SC","Helvetica Neue",sans-serif}
+header{display:flex;align-items:center;gap:16px;padding:14px 24px;background:var(--card);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5}
+header h1{font-size:17px;margin:0;font-weight:600}
+header .shop{color:var(--muted)}
+nav{display:flex;gap:4px;margin-left:12px}
+nav button{border:0;background:none;padding:6px 12px;border-radius:8px;color:var(--muted);cursor:pointer;font:inherit}
+nav button.on{background:var(--blue-bg);color:var(--blue);font-weight:600}
+.sp{flex:1}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:2px 10px;border-radius:99px;font-size:12px;background:var(--line);color:var(--muted);white-space:nowrap}
+.chip.ok{background:var(--green-bg);color:var(--green)}.chip.bad{background:var(--red-bg);color:var(--red)}.chip.run{background:var(--amber-bg);color:var(--amber)}
+main{padding:20px 24px;max-width:1400px;margin:0 auto}
+.btn{border:1px solid var(--line);background:var(--card);color:var(--ink);padding:6px 14px;border-radius:8px;cursor:pointer;font:inherit}
+.btn:hover{border-color:var(--blue)}
+.btn.pri{background:var(--blue);border-color:var(--blue);color:#fff}
+.btn.warn{background:var(--red);border-color:var(--red);color:#fff}
+.btn:disabled{opacity:.5;cursor:default}
+.bar{display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap}
+input,textarea{font:inherit;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:8px;padding:6px 10px}
+textarea{width:100%;min-height:60px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden;cursor:pointer;display:flex;flex-direction:column}
+.card:hover{border-color:var(--blue)}
+.card .img{aspect-ratio:3/4;background:var(--line) center/cover no-repeat;max-height:200px}
+.card .bd{padding:10px 12px;display:flex;flex-direction:column;gap:6px}
+.card .t{font-weight:600;font-size:13px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:2.6em}
+.code{font-family:ui-monospace,Menlo,monospace;font-size:12px;color:var(--muted)}
+.steps{display:flex;gap:3px}
+.steps i{flex:1;height:6px;border-radius:3px;background:var(--line)}
+.steps i.d{background:var(--green)}.steps i.r{background:var(--amber)}
+.legend{font-size:12px;color:var(--muted)}
+h2{font-size:15px;margin:22px 0 10px}
+pre{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px;white-space:pre-wrap;word-break:break-all;font:12px/1.6 ui-monospace,Menlo,monospace;max-height:520px;overflow:auto;margin:0}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(760px,100vw);background:var(--bg);border-left:1px solid var(--line);overflow:auto;z-index:10;box-shadow:-8px 0 24px rgba(0,0,0,.08);display:none}
+.drawer.open{display:block}
+.drawer .hd{display:flex;align-items:center;gap:10px;padding:14px 20px;background:var(--card);border-bottom:1px solid var(--line);position:sticky;top:0}
+.drawer .in{padding:16px 20px}
+.flow{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-bottom:8px}
+.flow div{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:6px 4px;text-align:center;font-size:12px}
+.flow .d{background:var(--green-bg);color:var(--green);border-color:transparent}
+.flow .r{background:var(--amber-bg);color:var(--amber);border-color:transparent}
+.flow .n{border-color:var(--blue);color:var(--blue);font-weight:600}
+.imgs{display:flex;gap:8px;overflow-x:auto;padding-bottom:6px}
+.imgs img{height:220px;border-radius:8px;border:1px solid var(--line);cursor:zoom-in;background:#fff}
+.box{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:12px}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.muted{color:var(--muted)}
+.zoom{position:fixed;inset:0;background:rgba(0,0,0,.75);display:none;align-items:center;justify-content:center;z-index:20;cursor:zoom-out}
+.zoom img{max-width:92vw;max-height:94vh;border-radius:6px}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 16px;border-radius:8px;display:none;z-index:30}
+table{border-collapse:collapse;width:100%}
+td,th{padding:6px 8px;border-bottom:1px solid var(--line);text-align:left;font-size:13px}
+details summary{cursor:pointer;color:var(--blue)}
+.new{display:none}.new.open{display:block}
+</style>
+</head>
+<body>
+<header>
+  <h1>闲鱼工作台</h1><span class="shop" id="shop"></span>
+  <nav id="nav">
+    <button data-v="pipe" class="on">流水线</button>
+    <button data-v="orders">订单</button>
+    <button data-v="live">在售</button>
+    <button data-v="imp">改进记录</button>
+    <button data-v="doc">体检</button>
+  </nav>
+  <span class="sp"></span>
+  <span id="runchip" class="chip">没有在跑的活</span>
+</header>
+<main>
+  <section id="v-pipe">
+    <div class="bar">
+      <button class="btn pri" onclick="toggleNew()">＋ 新商品</button>
+      <input id="q" placeholder="搜代号或标题" oninput="render()">
+      <label class="legend"><input type="checkbox" id="showPub" onchange="render()"> 显示已上架</label>
+      <span class="sp"></span>
+      <span class="legend">进度条 6 格：查货源 · 转页 · 文案 · 出图 · 发货链接 · 上架　<span class="chip ok">已完成</span> <span class="chip run">在跑</span></span>
+    </div>
+    <div class="box new" id="newbox">
+      <div class="row" style="margin-bottom:8px">
+        <input id="n-code" placeholder="代号，如 hs-physics" style="width:180px">
+        <input id="n-bench" placeholder="对标闲鱼链接" style="flex:1;min-width:240px">
+      </div>
+      <div class="row" style="margin-bottom:8px"><input id="n-src" placeholder="货源：夸克里的文件/文件夹名，或夸克分享链接" style="flex:1"></div>
+      <textarea id="n-note" placeholder="补充说明（可选）：比如只要其中几个文件、注意什么"></textarea>
+      <div class="row" style="margin-top:8px"><button class="btn pri" onclick="createItem()">建好并派「查货源」</button><span class="muted">第 2 步由货源角色接手，查完你在这里看结论</span></div>
+    </div>
+    <h2 id="h-todo">进行中</h2><div class="grid" id="g-todo"></div>
+    <h2 id="h-pub" style="display:none">已上架</h2><div class="grid" id="g-pub"></div>
+    <details style="margin-top:22px"><summary id="h-shelf">放弃 / 归档</summary><div class="grid" id="g-shelf" style="margin-top:10px"></div></details>
+  </section>
+  <section id="v-orders" hidden>
+    <div class="bar"><span>最近</span><input id="days" value="7" style="width:60px"><span>天</span><button class="btn" onclick="loadOrders()">刷新</button></div>
+    <pre id="orders">加载中…</pre>
+  </section>
+  <section id="v-live" hidden>
+    <div class="bar"><button class="btn" onclick="loadLive()">刷新</button><span class="muted">易店里正在卖的商品</span></div>
+    <pre id="live">加载中…</pre>
+  </section>
+  <section id="v-imp" hidden>
+    <div class="box"><textarea id="imp-new" placeholder="记一笔：哪里卡住了、哪里不满意、想改哪条规则"></textarea>
+      <div class="row" style="margin-top:8px"><button class="btn pri" onclick="addImp()">记下</button><span class="muted">总调度会按这里改 skill</span></div></div>
+    <pre id="imp">加载中…</pre>
+  </section>
+  <section id="v-doc" hidden>
+    <div class="bar"><button class="btn" onclick="loadDoctor()">重新体检</button><span class="muted">登录类问题请店主本人处理</span></div>
+    <pre id="doctor">点「重新体检」</pre>
+  </section>
+</main>
+
+<div class="drawer" id="drawer"><div class="hd"><b id="d-title"></b><span class="sp"></span><button class="btn" onclick="closeD()">关闭</button></div><div class="in" id="d-body"></div></div>
+<div class="zoom" id="zoom" onclick="this.style.display='none'"><img id="zoomimg"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+const STEPS=[["check","查货源"],["pages","转页"],["copy","文案"],["images","出图"],["delivery","发货链接"],["publish","上架"]];
+let S={items:[],running:[]},cur=null;
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const file=p=>"/file/"+p.split("/").map(encodeURIComponent).join("/");
+function toast(t){const e=$("toast");e.textContent=t;e.style.display="block";clearTimeout(e._t);e._t=setTimeout(()=>e.style.display="none",3500)}
+async function api(path,body){const r=await fetch(path,body?{method:"POST",headers:{"Content-Type":"application/json","X-Workbench":"1"},body:JSON.stringify(body)}:{});const j=await r.json();if(j.error)throw new Error(j.error);return j}
+
+document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{
+  document.querySelectorAll("nav button").forEach(x=>x.classList.toggle("on",x===b));
+  document.querySelectorAll("main>section").forEach(s=>s.hidden=s.id!=="v-"+b.dataset.v);
+  ({orders:loadOrders,live:loadLive,imp:loadImp,doc:()=>{}})[b.dataset.v]?.();
+});
+
+async function load(){
+  try{S=await api("/api/state")}catch(e){toast("读取失败："+e.message);return}
+  $("shop").textContent=S.shop;
+  const n=S.running.length;$("runchip").className="chip"+(n?" run":"");$("runchip").textContent=n?`${n} 个活在跑：`+S.running.map(r=>r.task).join("、"):"没有在跑的活";
+  render();
+  if(cur){const it=S.items.find(x=>x.code===cur),sig=it?JSON.stringify([it.steps,it.running]):"";
+    const typing=document.activeElement&&$("drawer").contains(document.activeElement);
+    if(sig!==window._sig&&!typing)openItem(cur,true);}
+}
+function stepBar(it){return `<div class="steps">${STEPS.map(([k])=>`<i class="${it.steps[k]?"d":(it.running.length&&it.next===k?"r":"")}"></i>`).join("")}</div>`}
+function card(it){
+  const nx=STEPS.find(s=>s[0]===it.next);
+  const st=it.shelved?`<span class="chip">${it.verdict==="DROP"?"复核放弃":"已归档"}</span>`:it.running.length?`<span class="chip run">在跑：${esc(it.running[0])}</span>`:it.steps.publish?`<span class="chip ok">已上架 ¥${it.price??""}</span>`:nx?`<span class="chip">下一步：${nx[1]}</span>`:"";
+  return `<div class="card" onclick="openItem('${esc(it.code)}')"><div class="img" style="background-image:url('${it.thumb?file(it.thumb):""}')"></div>
+  <div class="bd"><div class="t">${esc(it.title||"（还没有标题）")}</div><div class="code">${esc(it.code)}</div>${stepBar(it)}<div>${st}</div></div></div>`}
+function render(){
+  const q=$("q").value.trim().toLowerCase(),f=it=>!q||(it.code+it.title).toLowerCase().includes(q);
+  const todo=S.items.filter(it=>!it.steps.publish&&!it.shelved&&f(it)),pub=S.items.filter(it=>it.steps.publish&&!it.shelved&&f(it)),sh=S.items.filter(it=>it.shelved&&f(it));
+  $("h-shelf").textContent=`放弃 / 归档（${sh.length}）`;$("g-shelf").innerHTML=sh.map(card).join("");
+  $("g-todo").innerHTML=todo.map(card).join("")||'<p class="muted">没有进行中的商品。点「＋ 新商品」开一件。</p>';
+  $("h-todo").textContent=`进行中（${todo.length}）`;
+  const sp=$("showPub").checked;$("h-pub").style.display=$("g-pub").style.display=sp?"":"none";
+  $("h-pub").textContent=`已上架（${pub.length}）`;$("g-pub").innerHTML=sp?pub.map(card).join(""):"";
+}
+function toggleNew(){$("newbox").classList.toggle("open")}
+async function createItem(){
+  const b={code:$("n-code").value,benchmark:$("n-bench").value,source:$("n-src").value,note:$("n-note").value};
+  if(!b.code||!b.source){toast("代号和货源要填");return}
+  try{const r=await api("/api/new",b);toast(r.ok?"已派「查货源」":"派活失败");if(!r.ok)alert(r.out);$("newbox").classList.remove("open");load()}catch(e){toast(e.message)}
+}
+async function openItem(code,quiet){
+  cur=code;{const it0=S.items.find(x=>x.code===code);window._sig=it0?JSON.stringify([it0.steps,it0.running]):""}let d;try{d=await api("/api/item?code="+encodeURIComponent(code))}catch(e){toast(e.message);return}
+  const it=S.items.find(x=>x.code===code)||{steps:{},running:[]};
+  $("d-title").textContent=d.title||code;
+  const flow=STEPS.map(([k,n])=>`<div class="${it.steps[k]?"d":it.next===k?(it.running.length?"r":"n"):""}">${n}</div>`).join("");
+  const nx=STEPS.find(s=>s[0]===it.next);
+  let act="";
+  if(it.running.length) act=`<div class="box"><b>在跑：</b>${it.running.map(esc).join("、")}　<span class="muted">跑完自动刷新</span></div>`;
+  else if(nx&&nx[0]!=="publish") act=`<div class="box"><div class="row" style="margin-bottom:8px"><b>下一步：${nx[1]}</b><span class="muted">派给配置里的「${({check:"货源",pages:"货源",copy:"写手",images:"设计",delivery:"货源"})[nx[0]]}」角色</span></div>
+    <textarea id="d-note" placeholder="补充说明（可选）"></textarea><div class="row" style="margin-top:8px"><button class="btn pri" onclick="send('${nx[0]}')">派活</button>
+    ${nx[0]==="pages"||nx[0]==="copy"?`<button class="btn" onclick="send('${nx[0]==="pages"?"copy":"pages"}')">同时派「${nx[0]==="pages"?"写文案":"转页"}」</button>`:""}
+    ${nx[0]==="images"||nx[0]==="delivery"?`<button class="btn" onclick="send('${nx[0]==="images"?"delivery":"images"}')">同时派「${nx[0]==="images"?"发货链接":"出图"}」</button>`:""}</div></div>`;
+  else if(nx&&nx[0]==="publish") act=`<div class="box"><div class="row" style="margin-bottom:8px"><b>上架</b><span class="muted">先预演，确认标题、价格、图片后再正式上架</span></div>
+    <div class="row"><span>价格 ¥</span><input id="d-price" style="width:90px"><button class="btn" onclick="rndPrice()">随机（${S.price[0]}–${S.price[1]}）</button>
+    <button class="btn" onclick="pub(true)">预演</button><button class="btn warn" id="d-go" onclick="pub(false)" disabled>正式上架</button></div><pre id="d-pubout" style="margin-top:8px;display:none"></pre></div>`;
+  else if(d.published) act=`<div class="box"><span class="chip ok">已上架</span>　商品 ID <b>${esc(d.published.goods_id||d.published.timed_id)}</b>　¥${esc(d.published.price)}　<span class="muted">${esc(d.published.time||"")}</span></div>`;
+  const redo=`<details class="box"><summary>返工：让某一步重做</summary><div class="row" style="margin-top:8px">${STEPS.filter(s=>s[0]!=="publish").map(([k,n])=>`<button class="btn" onclick="send('${k}',true)">${n}</button>`).join("")}</div><p class="muted">在上面的补充说明里写清哪里不对，再点对应步骤。</p></details>`;
+  const imgs=(d.main?[d.main]:[]).concat(d.shots);
+  $("d-body").innerHTML=`<div class="flow">${flow}</div>${act}
+    ${imgs.length?`<div class="box"><b>主图 + 配图（${imgs.length}）</b><div class="imgs" style="margin-top:8px">${imgs.map(p=>`<img src="${file(p)}" onclick="zoom(this.src)">`).join("")}</div></div>`:""}
+    ${d.title||d.body?`<div class="box"><b>标题</b><p>${esc(d.title)}</p><b>正文</b><pre style="margin-top:6px">${esc(d.body)}</pre></div>`:""}
+    ${d.delivery_link?`<div class="box"><b>发货链接</b>　<a href="${esc(d.delivery_link)}" target="_blank">${esc(d.delivery_link)}</a></div>`:""}
+    ${d.pages.length?`<details class="box"><summary>页面图（${d.pages.length}）</summary><div class="imgs" style="margin-top:8px">${d.pages.map(p=>`<img src="${file(p)}" onclick="zoom(this.src)">`).join("")}</div></details>`:""}
+    ${Object.entries(d.docs).map(([f,t])=>`<details class="box"><summary>${esc(f)}</summary><pre style="margin-top:8px">${esc(t)}</pre></details>`).join("")}
+    ${d.logs.length?`<details class="box"><summary>任务日志（${d.logs.length}）</summary><div class="row" style="margin-top:8px">${d.logs.map(l=>`<button class="btn" onclick="showLog('${esc(l)}')">${esc(l)}</button>`).join("")}</div><pre id="d-log" style="margin-top:8px;display:none"></pre></details>`:""}
+    ${redo}
+    <div class="row" style="margin-top:8px">${it.shelved?`<button class="btn" onclick="arch(false)">取消归档</button>`:`<button class="btn" onclick="arch(true)">归档（不做了，放到最下面）</button>`}<span class="muted">只做标记，不删任何文件</span></div>`;
+  $("drawer").classList.add("open");
+}
+async function arch(on){await api("/api/archive",{code:cur,on});toast(on?"已归档":"已取消归档");closeD();load()}
+function closeD(){$("drawer").classList.remove("open");cur=null}
+function zoom(src){$("zoomimg").src=src;$("zoom").style.display="flex"}
+async function send(step,redo){
+  const note=$("d-note")?.value||"";
+  if(redo&&!confirm("让这一步重做？会生成新任务单派出去，旧成品由那个角色覆盖。"))return;
+  try{const r=await api("/api/dispatch",{code:cur,step,note});toast(r.ok?"已派出："+r.task:"派活失败");if(!r.ok)alert(r.out);load()}catch(e){toast(e.message)}
+}
+async function rndPrice(){const r=await api("/api/price",{});$("d-price").value=r.price}
+async function pub(dry){
+  const price=$("d-price").value;if(!price){toast("先填价格");return}
+  if(!dry&&!confirm(`确认以 ¥${price} 正式上架，并配置自动发货？`))return;
+  const o=$("d-pubout");o.style.display="block";o.textContent=dry?"预演中…":"上架中…";
+  try{const r=await api("/api/publish",{code:cur,price,dry});o.textContent=r.out;if(dry&&r.ok)$("d-go").disabled=false;if(!dry){toast(r.ok?"已上架":"上架失败");load()}}catch(e){o.textContent=e.message}
+}
+async function showLog(n){const r=await api("/api/log?name="+encodeURIComponent(n));const p=$("d-log");p.style.display="block";p.textContent=r.out}
+async function loadOrders(){$("orders").textContent="加载中…";try{$("orders").textContent=(await api("/api/orders?days="+$("days").value)).out}catch(e){$("orders").textContent=e.message}}
+async function loadLive(){$("live").textContent="加载中…";try{$("live").textContent=(await api("/api/live")).out}catch(e){$("live").textContent=e.message}}
+async function loadImp(){$("imp").textContent=(await api("/api/improvements")).out}
+async function addImp(){const t=$("imp-new").value.trim();if(!t)return;$("imp").textContent=(await api("/api/improvements",{text:t})).out;$("imp-new").value="";toast("记下了")}
+async function loadDoctor(){$("doctor").textContent="体检中…（约半分钟）";const r=await api("/api/doctor");$("doctor").textContent=r.out}
+load();setInterval(load,15000);
+</script>
+</body>
+</html>

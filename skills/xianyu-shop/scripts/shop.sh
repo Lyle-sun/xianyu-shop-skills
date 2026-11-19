@@ -8,6 +8,7 @@
 #   shop.sh publish <成品目录> [--dry-run]    易店上架 + 配自动发货
 #   shop.sh price                            在配置区间里随机给一个价格
 #   shop.sh stats                            拉一次易店在售数据
+#   shop.sh workbench [端口]                 打开本机工作台网页（默认 8765）
 #   shop.sh orders [天数]                    看最近几天订单（默认 2 天）
 setopt NULL_GLOB
 HERE="${0:A:h}"; SKILL="${HERE:h}"
@@ -101,6 +102,9 @@ publish)
 price)
   python3 -c "import random;print(round(random.uniform($PRICE_MIN,$PRICE_MAX),2))";;
 stats)  python3 "$HERE/daily_stats.py";;
+workbench)
+  W="${SKILL:A:h:h}/workbench/server.py"; [ -f "$W" ] || { echo "没找到工作台：$W（要从仓库安装 skill）"; exit 1; }
+  SHOP_CONFIG="$CONF" exec python3 "$W" "${1:-8765}";;
 orders) python3 "$HERE/yidian_api.py" orders ${1:-2};;
-*) sed -n 2,12p "$0";;
+*) sed -n 2,13p "$0";;
 esac

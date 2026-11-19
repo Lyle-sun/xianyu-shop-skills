@@ -105,7 +105,19 @@ $S orders 2                               # 最近 2 天订单（不显示买家
 
 `shop.sh` 的全部命令见 [`references/tools.md`](skills/xianyu-shop/references/tools.md)。
 
-## 6. 换成别的 agent
+## 6. 工作台（一个页面管全店）
+
+```bash
+~/.agents/skills/xianyu-shop/scripts/shop.sh workbench     # 打开 http://127.0.0.1:8765
+```
+
+- **流水线**：每件货一张卡片，6 格进度（查货源 · 转页 · 文案 · 出图 · 发货链接 · 上架），在跑的活标黄。点开能看主图、配图、标题正文、发货链接、查货结论和任务日志。
+- **派活**：卡片里直接点「派活」，可以写补充说明；能并行的两步会给「同时派」按钮；不满意就点「返工」让某一步重做。
+- **上架**：填价格或点「随机」，先预演，确认后再正式上架，自动配好发货。已上架的不会重复上。
+- **订单 / 在售 / 改进记录 / 体检**：各一个标签页。改进记录里可以直接记一笔，总调度会照着改 skill。
+- 只监听本机 127.0.0.1，不显示任何 token；「归档」只做标记，不删文件。
+
+## 7. 换成别的 agent
 
 改 `shop-config.env` 里两处就行：
 
@@ -116,11 +128,11 @@ AGENT_kimi='kimi run "请完整读取并严格执行 {TASK}。"'  # 告诉脚本
 
 `AGENT_xxx='self'` 表示这个角色由当前对话里的 agent 自己做，不另起进程。
 
-## 7. 持续优化
+## 8. 持续优化
 
 每做完一件，总调度在 `<店铺目录>/workflow/improvements.md` 记一笔：卡在哪、你改了什么、该改哪条规则、上架后的数据。**你明确不满意的当场改 skill，其他问题同一类出现两次再改**，写进 `SKILL.md` 末尾的变更记录。欢迎提 issue 和 PR。
 
-## 8. 红线（节选，全文见 [`references/redlines.md`](skills/xianyu-shop/references/redlines.md)）
+## 9. 红线（节选，全文见 [`references/redlines.md`](skills/xianyu-shop/references/redlines.md)）
 
 - 不碰影视、动画、付费课、出版物、名师/机构资料、别人在卖的付费产品、账号会员、破解。
 - 带别人水印、店铺名、联系方式的文件剔掉或换货，不靠去水印。
@@ -129,7 +141,7 @@ AGENT_kimi='kimi run "请完整读取并严格执行 {TASK}。"'  # 告诉脚本
 - 网盘只移动不删除；只发自己网盘的永久链接。
 - 不写假的「最新」「2026 版」；配好自动发货才写「秒发」。
 
-## 9. 常见问题
+## 10. 常见问题
 
 | 现象 | 原因和办法 |
 |---|---|
@@ -139,13 +151,14 @@ AGENT_kimi='kimi run "请完整读取并严格执行 {TASK}。"'  # 告诉脚本
 | 易店连不上 | token 过期了，重放一次 |
 | 上架脚本报「已提交但没找到」 | **不要重跑**，去易店后台看一眼，避免重复上架 |
 
-## 10. 目录
+## 11. 目录
 
 ```
 skills/
   xianyu-shop/            总控：SKILL.md、references/、templates/（5 个派活模板）、scripts/shop.sh
   listing-copy-mimic/     文案（爆款样例要你自己收集，见 references/README.md）
   xianyu-main-image/      主图（render.py + templates/main.html + examples/）
+workbench/                本机工作台（server.py + index.html，只用 Python 标准库）
 setup/setup-libreoffice.sh
 install.sh
 ```
