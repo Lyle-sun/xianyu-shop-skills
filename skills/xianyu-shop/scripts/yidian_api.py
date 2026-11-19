@@ -19,7 +19,7 @@
       以及上传图：main-upload.jpg（主图）+ preview-*.jpg / shots/*.jpg（详情图，最多再放 8 张）。
       成功后写 published.json（goods_id、图片地址、时间），已有 published.json 的包会跳过。
 """
-import json, os, sys, time, uuid, glob, urllib.request, urllib.parse
+import json, os, sys, time, uuid, glob, urllib.request, urllib.parse, urllib.error
 
 BASE = "https://ed.weeeg.com"
 CATE = {"电子资料": "50", "设计素材": "54"}
@@ -58,8 +58,14 @@ def req(method, path, data=None, ctype="application/json;charset=UTF-8"):
         if isinstance(data, (dict, list)):
             data = json.dumps(data, ensure_ascii=False).encode()
     r = urllib.request.Request(BASE + path, data=data, headers=h, method=method)
-    with urllib.request.urlopen(r, timeout=60) as resp:
-        j = json.loads(resp.read().decode())
+    for i in range(3):  # 网络偶尔断（SSL EOF 之类），重试两次
+        try:
+            with urllib.request.urlopen(r, timeout=60) as resp:
+                j = json.loads(resp.read().decode())
+            break
+        except urllib.error.URLError:
+            if i == 2: raise
+            time.sleep(2 * (i + 1))
     if j.get("status") != 200:
         raise RuntimeError(f"{path} 失败：{j.get('msg')}")
     return j

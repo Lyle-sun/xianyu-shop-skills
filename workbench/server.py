@@ -25,7 +25,7 @@ CONF = find_config()
 
 
 def load_env():
-    out = subprocess.run(["zsh", "-c", f'source "{CONF}"; env -0'], capture_output=True).stdout.decode()
+    out = subprocess.run(["zsh", "-c", f'set -a; source "{CONF}"; set +a; env -0'], capture_output=True).stdout.decode()
     env = dict(x.split("=", 1) for x in out.split("\0") if "=" in x)
     return env
 
@@ -256,6 +256,54 @@ def categories():
     return {"date": latest, "tagged": sum(1 for r in rows if r["category"]), "rows": rows}
 
 
+SETTINGS = os.path.join(SHOP, "data", "workbench-settings.json")
+
+
+def settings(upd=None):
+    st = {"auto_refresh_hours": 6, "last_refresh": None, "last_result": ""}
+    try: st.update(json.load(open(SETTINGS, encoding="utf-8")))
+    except Exception: pass
+    if upd:
+        st.update(upd); os.makedirs(os.path.dirname(SETTINGS), exist_ok=True)
+        json.dump(st, open(SETTINGS, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+    return st
+
+
+def refresh_stats():
+    out, rc = sh("stats", timeout=300)
+    _orders_cache["t"] = 0
+    settings({"last_refresh": time.strftime("%Y-%m-%d %H:%M"), "last_result": (out.splitlines() or [""])[0] if rc == 0 else "失败：" + (out.strip().splitlines() or [""])[-1][-160:]})
+    return out, rc
+
+
+def scheduler():
+    while True:
+        try:
+            st = settings(); h = float(st.get("auto_refresh_hours") or 0)
+            last = st.get("last_refresh")
+            wait = 0.25 if str(st.get("last_result", "")).startswith("失败") else h  # 失败了 15 分钟后重试
+            due = h > 0 and (not last or time.time() - time.mktime(time.strptime(last, "%Y-%m-%d %H:%M")) >= wait * 3600)
+            if due: refresh_stats()
+        except Exception as e:
+            print("scheduler:", e)
+        time.sleep(60)
+
+
+def trend():
+    import csv
+    cat = {}
+    try: cat = json.load(open(os.path.join(SHOP, "data", "catalog.json"), encoding="utf-8"))
+    except Exception: pass
+    agg = {}
+    try:
+        for r in csv.DictReader(open(os.path.join(SHOP, "data", "stats", "daily.csv"), encoding="utf-8")):
+            c = (cat.get(r["goods_id"]) or {}).get("category") or "未标"
+            a = agg.setdefault(r["date"], {}).setdefault(c, {"browse": 0, "want": 0, "n": 0})
+            a["browse"] += int(r["browseCount"] or 0); a["want"] += int(r["wantNum"] or 0); a["n"] += 1
+    except Exception: pass
+    return {"dates": sorted(agg), "data": agg}
+
+
 def improvements(add=None):
     p = os.path.join(SHOP, "workflow", "improvements.md")
     if add:
@@ -308,7 +356,9 @@ class H(BaseHTTPRequestHandler):
             if u.path == "/api/improvements":
                 return self.send(200, {"out": improvements()})
             if u.path == "/api/categories":
-                return self.send(200, categories())
+                return self.send(200, {**categories(), "settings": settings()})
+            if u.path == "/api/trend":
+                return self.send(200, trend())
             if u.path.startswith("/file/"):
                 rel = urllib.parse.unquote(u.path[6:])
                 p = os.path.realpath(os.path.join(ASSETS, rel))
@@ -338,8 +388,11 @@ class H(BaseHTTPRequestHandler):
                 elif os.path.exists(f): os.remove(f)
                 return self.send(200, {"ok": True})
             if self.path == "/api/stats":
-                out, rc = sh("stats", timeout=300); _orders_cache["t"] = 0
+                out, rc = refresh_stats()
                 return self.send(200, {"out": out, "ok": rc == 0})
+            if self.path == "/api/settings":
+                h = float(b.get("auto_refresh_hours", 6))
+                return self.send(200, settings({"auto_refresh_hours": max(0.0, h)}))
             if self.path == "/api/price":
                 out, _ = sh("price")
                 return self.send(200, {"price": out.strip()})
@@ -353,4 +406,6 @@ class H(BaseHTTPRequestHandler):
 if __name__ == "__main__":
     port = int(sys.argv[1]) if len(sys.argv) > 1 else 8765
     print(f"工作台：http://127.0.0.1:{port}   店铺目录：{SHOP}")
+    import threading
+    threading.Thread(target=scheduler, daemon=True).start()
     ThreadingHTTPServer(("127.0.0.1", port), H).serve_forever()
