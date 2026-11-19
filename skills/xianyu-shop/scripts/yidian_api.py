@@ -127,6 +127,11 @@ def publish(d, dry=False, skip_review=False, at=None):
     extra = sorted(glob.glob(f"{d}/preview-*.jpg")) + sorted(glob.glob(f"{d}/shots/*.jpg"))
     imgs = [main] + extra[:8]
     if len(title) > 30: sys.exit(f"标题超过 30 字：{title}")
+    bw = os.path.join(os.path.dirname(os.path.abspath(__file__)), "banned-words.txt")
+    if os.path.exists(bw):
+        words = [w.strip().lower() for w in open(bw, encoding="utf-8") if w.strip() and not w.startswith("#")]
+        hit = [w for w in words if w in (title + "\n" + body).lower()]
+        if hit: sys.exit(f"标题或正文含闲鱼违禁词 {hit}，不发（见 banned-words.txt）")
     if "pan.quark.cn/s/" not in wp and not any(k in wp for k in ("feishu.cn/docx/", "feishu.cn/wiki/")):
         sys.exit("delivery.txt 里没有夸克分享链接或飞书文档链接")
     if any(x["title"] == title for x in list_live(title)):

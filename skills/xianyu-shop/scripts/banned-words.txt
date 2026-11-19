@@ -1,0 +1,14 @@
+# 闲鱼违禁词（一行一个，不分大小写）。上架前扫标题和正文，命中就不发。来源见 references/redlines.md。
+codex
+claude
+chatgpt
+gpt
+openai
+gemini
+cursor
+论文降重
+降重
+降ai率
+降aigc
+代写
+查重
