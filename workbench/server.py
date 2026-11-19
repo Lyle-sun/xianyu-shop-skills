@@ -211,15 +211,27 @@ def publish(code, price, dry):
     return {"ok": rc2 == 0, "out": out + "\n\n" + out2}
 
 
-_orders_cache = {"t": 0, "rows": []}
+_orders_cache = {"t": 0, "rows": [], "busy": False, "ok": None}
 
 
-def all_orders():
-    if time.time() - _orders_cache["t"] > 300:
+def _fetch_orders():
+    try:
         os.environ.update({k: v for k, v in ENV.items() if k.startswith("YIDIAN_")})
         sys.path.insert(0, os.path.dirname(YIDIAN))
         import yidian_api
-        _orders_cache.update(t=time.time(), rows=yidian_api.list_orders(None, 500))
+        _orders_cache.update(rows=yidian_api.list_orders(None, 500), ok=True)
+    except Exception as e:
+        _orders_cache.update(ok=False); print("orders:", e, flush=True)
+    finally:
+        _orders_cache["busy"] = False
+
+
+def all_orders():
+    """不阻塞页面：过期就在后台重拉，先返回上次的结果。"""
+    import threading
+    if time.time() - _orders_cache["t"] > 300 and not _orders_cache.get("busy"):
+        _orders_cache.update(t=time.time(), busy=True)
+        threading.Thread(target=_fetch_orders, daemon=True).start()
     return _orders_cache["rows"]
 
 
@@ -253,7 +265,7 @@ def categories():
                      "exposure": int(st["exposureNum"] or 0), "browse": int(st["browseCount"] or 0), "want": int(st["wantNum"] or 0),
                      "orders": n, "money": round(money, 2),
                      **{k: t.get(k) for k in ("category", "sub", "stage", "year", "edition", "format", "source_shop", "confidence", "basis")}})
-    return {"date": latest, "tagged": sum(1 for r in rows if r["category"]), "rows": rows}
+    return {"date": latest, "tagged": sum(1 for r in rows if r["category"]), "rows": rows, "orders_ok": _orders_cache.get("ok")}
 
 
 SETTINGS = os.path.join(SHOP, "data", "workbench-settings.json")
