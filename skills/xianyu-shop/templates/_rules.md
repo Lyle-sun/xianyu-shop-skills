@@ -5,6 +5,7 @@
 - 碰到未登录、未授权、过期、权限不足：立刻停，把报错原文写进交付文件，等店主处理。不翻别处的配置找 token，不拿 cookie 拼请求，不换路子绕。
 - 不打开会弹窗口的软件（WPS、Word、Pages 等），不操作屏幕界面。
 - 要用无头 Chrome 抓网页或渲染，启动参数必须带 `--use-mock-keychain --password-store=basic`，并用 `.tmp/` 下的独立 `--user-data-dir`；不然每次启动都会在店主屏幕上弹「Keychain Not Found」。能复用一个 Chrome 进程就别每页重开。
+- 写飞书选品表、线索库时，「账号」列填配置里的 `SHOP_ACCOUNT`（如「账号1」），同一个表里多个账号靠这一列区分。选品报告写完，用 `lark-cli docs +create --parent-token $FEISHU_WIKI_REPORTS_NODE --doc-format markdown` 同步一份到知识库本账号的「选品报告」目录，标题以「账号N｜」开头。
 - 网盘只移动、不删除，不动本任务以外的文件。
 - 不写「自己做内容」「自制」这类建议。
 - 收尾删掉本任务自己在 `.tmp/` 下产生的中间文件，交付物和货源原件留着；在交付文件末尾写一句删了什么。

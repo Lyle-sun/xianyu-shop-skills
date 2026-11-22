@@ -98,3 +98,4 @@ shop.sh dispatch writer "$t"
 - 2026-11-19 v1.4：加品类标签（taxonomy.md）；查货源时打标签，上架后并入 data/catalog.json；工作台加「品类」页按标签比数据。
 - 2026-11-22 v1.5：加夸克授权自查模板 quark-auth.md，各 agent 把自查结果写进 `data/auth/quark-<agent>.json` 给工作台显示；夸克 CLI 去掉了 `--stdout-only`，体检和规则跟着改。
 - 2026-11-22 v1.6：多账号。一个易店账号绑一个闲鱼店，配置 YIDIAN_ACCOUNTS；其他店发变体（copy-variant、images-variant），pack/publish 加 `--account`；orders、stats 合并各店并标「@账号」。
+- 2026-11-22 v1.5：多账号——配置加 `SHOP_ACCOUNT`、`FEISHU_WIKI_REPORTS_NODE`；选品表、线索库加「账号」列；知识库分「通用 / 账号1 / 账号2」，选品报告同步到本账号目录。
