@@ -20,12 +20,19 @@
 |---|---|---|
 | 盘行（主力） | panhang.com | 详情页 `/doc/<id>` 能取到夸克直链；搜索页是前端渲染，要用无头 Chrome 打开；**不登录只能看第 1 页**（翻页要登录，就停）；高频会触发 IP 限流，停一会儿再查，不绕 |
 | pansearch | pansearch.me | 结果杂，按时间排，翻页参数常失效；当补充 |
-| KK 小站 | pioz | 品类少，冷门方向常 0 条 |
-| 资源星图 | resources.examcalenders.com；本地索引 `research/benchmark/1117/.work/resource-items.json`（4,718 条） | 先在本地索引按关键词筛，再去站上取链接 |
+| 夸克小站 | www.pioz.cn | 夸克资源聚合搜索；品类少，冷门方向常 0 条 |
+| 资源星球（资源星图） | resources.examcalenders.com；本地索引 `research/benchmark/1117/.work/resource-items.json`（4,718 条） | 先在本地索引按关键词筛，再去站上取链接 |
 | 本地货源表 | `data/huoyuan-items.json`（707 条） | 以 K12、简历、PPT、表格为主 |
 | B 站动态正文 / 公开文章 | 搜「关键词 + 夸克」 | 偶尔能翻出夸克链接；公众号文章常要验证，遇到就换站 |
-| 飞书货源清单 | https://ocnqfwcokvma.feishu.cn/docx/V6vUdRRNFoMBfexUu3AcAXBlnMh | 店主收集的货源 |
+| panlama 资源库 | https://panlama.com/resources | 网盘资源合集，可直接转存 |
+| X 上的资源号 | X（推特）上分享网盘资源的账号 | 资源多，帖子里直接给网盘链接；只看公开帖，不登录、不私信 |
+| 公众号搜索 | 微信搜一搜 | 常弹「环境异常」验证，遇到就换站，不过验证码 |
+| 腾讯文档·百度网盘资料库 | https://docs.qq.com/sheet/DS1VnS1Jwb3VsUmpD?tab=000002 | 百度网盘链接，**不能直接转存到夸克**：要先下载再传夸克，体积大的先问店主 |
+| Z-Library | https://zh.z-lib.fm | 电子书、学术文献；没有现成网盘分享，要下载再自己传，单本小，要按主题拼够 500MB；体积大的先问店主 |
+| 拼多多、淘宝资料店 VIP | 搜「资料店铺 VIP」 | 9.9–19.9 元开店铺 VIP 下载整理好的资源。**要付钱，agent 不买，只记店名、价格、能拿到什么，由店主自己买**；先在上面免费渠道找，实在没有再走这条 |
+| 飞书货源清单 | https://ocnqfwcokvma.feishu.cn/docx/V6vUdRRNFoMBfexUu3AcAXBlnMh | 店主收集的渠道总表，上面各条都出自这里 |
 
+- **不用**：吾爱破解、果核剥壳这类破解软件站（破解在红线里）。
 - 夸克链接只认 `pan.quark.cn`，仿冒域名（quarkk.xyz 等）不点。
 - 夸克匿名接口能看目录、文件大小、首页预览（`sharepage/token` + `detail` + `file/info`），匿名下载常被拒；**抽查就看首页预览和文件名**，不为抽查转存。
 - 盘行标的大小常不准，以夸克实际遍历为准。

@@ -102,3 +102,4 @@ shop.sh dispatch writer "$t"
 - 2026-11-22 v1.7：多账号标记——配置加 `SHOP_ACCOUNT`、`FEISHU_WIKI_REPORTS_NODE`；选品表、线索库加「账号」列；知识库分「通用 / 账号1 / 账号2」，选品报告同步到本账号目录。
 - 2026-11-22 v1.8：店主把影视剧、动画、付费课、出版物、名师/机构/品牌资料、别人正在卖的付费产品从「不碰」里删掉；sourcing-check 跟着改。
 - 2026-11-22 v1.9：加 references/sourcing-channels.md（看需求的来源、找货渠道及各自特点、找货口径、记在哪）。
+- 2026-11-22 v1.10：sourcing-channels 按店主货源清单补 panlama、X 资源号、公众号、腾讯文档百度资料库、Z-Library、电商 VIP；写明破解站不用。
