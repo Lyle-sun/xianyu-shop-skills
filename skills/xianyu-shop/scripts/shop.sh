@@ -52,7 +52,7 @@ doctor)
   python3 "$HERE/yidian_api.py" list >/dev/null 2>&1 && ok "易店登录" || bad "易店连不上：token 过期或没放，店主本人重新放一次"
   # 夸克授权按 agent 渠道分开，只能由各 agent 自己查自己的；不借用别的 agent 的授权。
   me=$(cd "$SHOP_DIR" && ${=QUARK} resolve-agent 2>&1 | grep -o 'QK_AGENT_ID=.*' | cut -d= -f2)
-  out=$(cd "$SHOP_DIR" && ${=QUARK} get-user-info --stdout-only 2>/dev/null | grep -v compdef)
+  out=$(cd "$SHOP_DIR" && ${=QUARK} get-user-info 2>/dev/null | grep -v compdef)
   if echo "$out" | grep -q '"code":0'; then ok "夸克登录（本渠道 $me）"
   elif [ "$me" = "${(L)ROLE_SOURCER}" ] || [ "$me" = deepseek -a "$ROLE_SOURCER" = dsh ]; then bad "夸克未授权（本渠道 $me，货源角色要用）：店主本人重新授权"
   else echo "- 夸克本渠道（$me）未授权，本角色用不到；货源角色（$ROLE_SOURCER）的任务单开头会自查"; fi

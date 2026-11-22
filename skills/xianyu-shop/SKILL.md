@@ -78,7 +78,7 @@ shop.sh dispatch writer "$t"
 - [references/redlines.md](references/redlines.md)：红线
 - [references/tools.md](references/tools.md)：工具说明（大白话 + 命令）
 - [references/taxonomy.md](references/taxonomy.md)：品类标签（大类、细分、年份、新旧…），品类测试靠它
-- `templates/`：派活模板；`_rules.md` 会自动拼进每张任务单
+- `templates/`：派活模板（quark-auth 是夸克授权自查）；`_rules.md` 会自动拼进每张任务单
 
 ## 变更记录
 
@@ -87,3 +87,4 @@ shop.sh dispatch writer "$t"
 - 2026-11-18 v1.2：shop-log 挪到店铺目录（沙箱里的写手也能写）；查货源模板去掉会被带进任务单的提示语。
 - 2026-11-19 v1.3：加本机工作台（流水线看板、派活/返工、预演+上架、订单、在售、改进记录、体检、归档）；11-19 工作台拆成单独仓库，`shop.sh workbench` 按 WORKBENCH_DIR 找。
 - 2026-11-19 v1.4：加品类标签（taxonomy.md）；查货源时打标签，上架后并入 data/catalog.json；工作台加「品类」页按标签比数据。
+- 2026-11-22 v1.5：加夸克授权自查模板 quark-auth.md，各 agent 把自查结果写进 `data/auth/quark-<agent>.json` 给工作台显示；夸克 CLI 去掉了 `--stdout-only`，体检和规则跟着改。
