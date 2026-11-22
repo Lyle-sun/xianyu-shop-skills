@@ -52,6 +52,15 @@ shop.sh dispatch writer "$t"
 ```
 任务单里没填的 `{{占位符}}` 会提示，直接编辑任务单补上。派出去的活跑完后看日志 `tasks/logs/` 和交付文件，按上表验收；不合格就写清哪里不对，重新派，不要自己替别的角色干。
 
+### 多个闲鱼店（多账号）
+
+一个易店账号绑一个闲鱼店。主店叫 `main`；其他店写在配置 `YIDIAN_ACCOUNTS`（每个配 `YIDIAN_NICK_<账号>`、`YIDIAN_LABEL_<账号>`，token 由店主放 `~/.config/yidian/token-<账号>`），`shop.sh accounts` 查看。
+
+- 同一件货发到其他店前，要出**变体**：`task copy-variant <代号> ACCOUNT=<账号>` → `dispatch writer`；文案好了再 `task images-variant <代号> ACCOUNT=<账号>` → `dispatch designer`。交付在 `xianyu-assets/<代号>/acct-<账号>/`（listing.md、main.png）。配图和发货链接沿用主店的。
+- 验收：标题换了切入点（不是换几个字），主图换了打底页和配色，事实和主店一致。
+- 上架：`pack <目录> <价格> --account <账号>` → `publish <目录> --account <账号> [--dry-run]`，主店和其他店同时发；各店的 `published.json` 在各自的包目录里。
+- `orders`、`stats` 默认把所有店合在一起，每行标「@账号」。
+
 ### 店主改主意时
 
 店主说「换一张主图」「标题加秒发」这类小改动：生成一张只写这一处改动的小任务单，派给对应角色。改完回到验收。
@@ -78,7 +87,7 @@ shop.sh dispatch writer "$t"
 - [references/redlines.md](references/redlines.md)：红线
 - [references/tools.md](references/tools.md)：工具说明（大白话 + 命令）
 - [references/taxonomy.md](references/taxonomy.md)：品类标签（大类、细分、年份、新旧…），品类测试靠它
-- `templates/`：派活模板（quark-auth 是夸克授权自查）；`_rules.md` 会自动拼进每张任务单
+- `templates/`：派活模板（quark-auth 是夸克授权自查，copy-variant / images-variant 是其他店的变体）；`_rules.md` 会自动拼进每张任务单
 
 ## 变更记录
 
@@ -88,3 +97,4 @@ shop.sh dispatch writer "$t"
 - 2026-11-19 v1.3：加本机工作台（流水线看板、派活/返工、预演+上架、订单、在售、改进记录、体检、归档）；11-19 工作台拆成单独仓库，`shop.sh workbench` 按 WORKBENCH_DIR 找。
 - 2026-11-19 v1.4：加品类标签（taxonomy.md）；查货源时打标签，上架后并入 data/catalog.json；工作台加「品类」页按标签比数据。
 - 2026-11-22 v1.5：加夸克授权自查模板 quark-auth.md，各 agent 把自查结果写进 `data/auth/quark-<agent>.json` 给工作台显示；夸克 CLI 去掉了 `--stdout-only`，体检和规则跟着改。
+- 2026-11-22 v1.6：多账号。一个易店账号绑一个闲鱼店，配置 YIDIAN_ACCOUNTS；其他店发变体（copy-variant、images-variant），pack/publish 加 `--account`；orders、stats 合并各店并标「@账号」。

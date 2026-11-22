@@ -4,6 +4,11 @@
 登录凭证：用户自己把易店 token 存到 ~/.config/yidian/token（chmod 600），
 或设环境变量 YIDIAN_TOKEN。脚本只读取、不打印、不外传。Agent 不要去浏览器里取 token。
 
+多账号（一个易店账号绑一个闲鱼店）：主账号叫 main，用上面的 token 和 YIDIAN_NICK；
+其他账号写在配置 YIDIAN_ACCOUNTS="b c"，每个配 YIDIAN_NICK_b（易店里的店铺昵称）、YIDIAN_LABEL_b（显示名），
+token 由店主放到 ~/.config/yidian/token-b。环境变量 YIDIAN_ACCOUNT=b 时所有命令都用 b 账号；
+orders / list 不指定时会把所有账号合在一起列，每行带「@账号」。
+
 用法：
   python3 yidian_api.py list                    # 列出在售商品（id / 标题 / 价格）
   python3 yidian_api.py show <goods_id>         # 看一个商品的标题、价格、图片、正文
@@ -25,6 +30,7 @@ BASE = "https://ed.weeeg.com"
 CATE = {"电子资料": "50", "设计素材": "54"}
 CATE_ALIAS = {"资料包": "电子资料", "教程": "电子资料", "模板素材": "设计素材", "模板": "设计素材", "素材": "设计素材"}
 NICK = os.environ.get("YIDIAN_NICK") or sys.exit("缺 YIDIAN_NICK：先 source 店铺配置 shop-config.env")
+ACCT = "main"
 ADDRESS = json.loads(os.environ.get("YIDIAN_ADDRESS", "[1, 35, 408]"))
 DEFAULTS = dict(address=ADDRESS, freight=4, postage=0, quan=999, nick=NICK)
 DELIVER_TPL = {"id": 0, "nick_id": NICK, "disk_type": 1, "wp_txt": "", "cdk_txt": "", "xm_cdkname": "",
@@ -38,14 +44,33 @@ DELIVER_TPL = {"id": 0, "nick_id": NICK, "disk_type": 1, "wp_txt": "", "cdk_txt"
     "auto_offshelf": 0}
 
 
+def accounts():
+    return ["main"] + [a for a in os.environ.get("YIDIAN_ACCOUNTS", "").split() if a != "main"]
+
+
+def token_path(acct=None):
+    acct = acct or ACCT
+    return os.path.expanduser("~/.config/yidian/token" + ("" if acct == "main" else "-" + acct))
+
+
+def use(acct):
+    """切换到某个易店账号：之后的请求用它的 token，上架发到它的闲鱼店。"""
+    global ACCT, NICK
+    if acct not in accounts(): sys.exit(f"配置里没有账号 {acct}（YIDIAN_ACCOUNTS 里加上，并配 YIDIAN_NICK_{acct}）")
+    nick = os.environ.get("YIDIAN_NICK") if acct == "main" else os.environ.get(f"YIDIAN_NICK_{acct}")
+    if not nick: sys.exit(f"缺 YIDIAN_NICK_{acct}：账号 {acct} 在易店里的店铺昵称")
+    ACCT, NICK = acct, nick
+    DEFAULTS["nick"] = nick; DELIVER_TPL["nick_id"] = nick
+
+
 def token():
-    t = os.environ.get("YIDIAN_TOKEN")
+    t = os.environ.get("YIDIAN_TOKEN") if ACCT == "main" else None
     if not t:
-        p = os.path.expanduser("~/.config/yidian/token")
+        p = token_path()
         if os.path.exists(p):
             t = open(p).read().strip()
     if not t:
-        sys.exit("缺 token：请用户把易店 token 存到 ~/.config/yidian/token（Agent 不要自己去取）")
+        sys.exit(f"缺 token（账号 {ACCT}）：请用户把易店 token 存到 {token_path()}（Agent 不要自己去取）")
     return urllib.parse.unquote(t)
 
 
@@ -230,13 +255,28 @@ def set_show(gid, on):
     print(("已上架 " if on else "已下架 ") + str(gid))
 
 
+def each_account(fn):
+    """指定了 YIDIAN_ACCOUNT 就只跑那一个；否则所有账号都跑，某个账号出错就提示并跳过。"""
+    only = os.environ.get("YIDIAN_ACCOUNT")
+    out = []
+    for acct in ([only] if only else accounts()):
+        try:
+            use(acct); out += [dict(x, shop=acct) for x in fn()]
+        except (Exception, SystemExit) as e:
+            print(f"! 账号 {acct} 读取失败：{e}")
+    return out
+
+
 if __name__ == "__main__":
     import argparse
     a = sys.argv[1:]
+    if os.environ.get("YIDIAN_ACCOUNT"): use(os.environ["YIDIAN_ACCOUNT"])
+    multi = len(accounts()) > 1
+    tag = lambda x: f'@{x["shop"]} ' if multi else ""
     if a and a[0] == "orders":
         days = a[1] if len(a) > 1 else 2
-        L = list_orders(days)
-        for x in L: print(x["time"], x["status"], f'¥{x["money"]}', x["title"])
+        L = sorted(each_account(lambda: list_orders(days)), key=lambda x: x["time"] or "", reverse=True)
+        for x in L: print(x["time"], x["status"], f'¥{x["money"]}', tag(x) + str(x["title"]))
         print(f"近 {days} 天共 {len(L)} 单，合计 ¥{sum(float(x['money'] or 0) for x in L):.2f}"); sys.exit(0)
     if a and a[0] == "timed":
         L = list_timed()
@@ -252,7 +292,7 @@ if __name__ == "__main__":
     if not a or a[0] not in ("list", "publish", "show", "update", "offshelf", "onshelf"):
         print(__doc__); sys.exit(1)
     if a[0] == "list":
-        for x in list_live(): print(x["id"], x["price"], x["title"])
+        for x in each_account(list_live): print(x["id"], x["price"], tag(x) + x["title"])
     elif a[0] == "publish":
         at = a[a.index("--at") + 1] if "--at" in a else None
         publish(a[1].rstrip("/"), dry="--dry-run" in a, skip_review="--skip-review" in a, at=at)

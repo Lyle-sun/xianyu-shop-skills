@@ -11,10 +11,10 @@ from pathlib import Path
 import os
 ROOT = Path(os.environ.get("SHOP_DIR") or sys.exit("缺 SHOP_DIR：先 source 店铺配置 shop-config.env"))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from yidian_api import req  # noqa: E402
+from yidian_api import req, use, accounts  # noqa: E402
 
 OUT = ROOT / "data" / "stats" / "daily.csv"
-FIELDS = ["date", "goods_id", "title", "price", "exposureNum", "browseCount", "wantNum", "listed_at"]
+FIELDS = ["date", "goods_id", "title", "price", "exposureNum", "browseCount", "wantNum", "listed_at", "shop"]
 
 
 def fetch_live():
@@ -48,7 +48,12 @@ def main():
     today = datetime.now().strftime("%Y-%m-%d")
     yesterday = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
 
-    raw = fetch_live()
+    raw = []
+    for acct in accounts():  # 每个易店账号都拉，行上记是哪个店
+        try:
+            use(acct); raw += [dict(x, _shop=acct) for x in fetch_live()]
+        except (Exception, SystemExit) as e:
+            print(f"! 账号 {acct} 拉取失败：{e}")
     current = []
     for x in raw:
         current.append({
@@ -60,6 +65,7 @@ def main():
             "browseCount": num(x.get("browseCount")),
             "wantNum": num(x.get("wantNum")),
             "listed_at": x.get("add_time", ""),
+            "shop": x["_shop"],
         })
 
     old = load_existing()

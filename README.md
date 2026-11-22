@@ -109,7 +109,16 @@ $S orders 2                               # 最近 2 天订单（不显示买家
 
 工作台（一个网页看全店：流水线、品类数据、订单、改进记录）是单独的仓库，不在这里。装好它以后用 `shop.sh workbench` 打开；位置写在 `shop-config.env` 的 `WORKBENCH_DIR`。没有工作台，所有事也都能用 `shop.sh` 命令做。
 
-## 7. 换成别的 agent
+## 7. 多个闲鱼店
+
+一个易店账号绑一个闲鱼店，同一件货可以同时发到几个店：
+
+1. 在配置里加店：`YIDIAN_ACCOUNTS="b"`、`YIDIAN_NICK_b="易店里这个店的昵称"`、`YIDIAN_LABEL_b="二店"`（工作台「登录/体检」页也能加）。
+2. 这个易店账号的 token 由你本人放到 `~/.config/yidian/token-b`（或在工作台粘贴）。`shop.sh accounts` 查看各店。
+3. 两个店一模一样容易被闲鱼判重复，所以其他店要出**变体**：`task copy-variant <代号> ACCOUNT=b` 派写手换标题和正文说法，再 `task images-variant <代号> ACCOUNT=b` 派设计换主图（换打底页和配色）。配图和发货链接共用。
+4. 上架：`pack <目录> <价格> --account b`、`publish <目录> --account b`。`orders`、`stats` 自动把各店合在一起，每行标「@账号」。
+
+## 8. 换成别的 agent
 
 改 `shop-config.env` 里两处就行：
 
@@ -120,11 +129,11 @@ AGENT_kimi='kimi run "请完整读取并严格执行 {TASK}。"'  # 告诉脚本
 
 `AGENT_xxx='self'` 表示这个角色由当前对话里的 agent 自己做，不另起进程。
 
-## 8. 持续优化
+## 9. 持续优化
 
 每做完一件，总调度在 `<店铺目录>/workflow/improvements.md` 记一笔：卡在哪、你改了什么、该改哪条规则、上架后的数据。**你明确不满意的当场改 skill，其他问题同一类出现两次再改**，写进 `SKILL.md` 末尾的变更记录。欢迎提 issue 和 PR。
 
-## 9. 红线（节选，全文见 [`references/redlines.md`](skills/xianyu-shop/references/redlines.md)）
+## 10. 红线（节选，全文见 [`references/redlines.md`](skills/xianyu-shop/references/redlines.md)）
 
 - 不碰影视、动画、付费课、出版物、名师/机构资料、别人在卖的付费产品、账号会员、破解。
 - 带别人水印、店铺名、联系方式的文件剔掉或换货，不靠去水印。
@@ -133,7 +142,7 @@ AGENT_kimi='kimi run "请完整读取并严格执行 {TASK}。"'  # 告诉脚本
 - 网盘只移动不删除；只发自己网盘的永久链接。
 - 不写假的「最新」「2026 版」；配好自动发货才写「秒发」。
 
-## 10. 常见问题
+## 11. 常见问题
 
 | 现象 | 原因和办法 |
 |---|---|
@@ -143,11 +152,11 @@ AGENT_kimi='kimi run "请完整读取并严格执行 {TASK}。"'  # 告诉脚本
 | 易店连不上 | token 过期了，重放一次 |
 | 上架脚本报「已提交但没找到」 | **不要重跑**，去易店后台看一眼，避免重复上架 |
 
-## 11. 目录
+## 12. 目录
 
 ```
 skills/
-  xianyu-shop/            总控：SKILL.md、references/、templates/（5 个派活模板）、scripts/shop.sh
+  xianyu-shop/            总控：SKILL.md、references/、templates/（派活模板）、scripts/shop.sh
   listing-copy-mimic/     文案（爆款样例要你自己收集，见 references/README.md）
   xianyu-main-image/      主图（render.py + templates/main.html + examples/）
 setup/setup-libreoffice.sh

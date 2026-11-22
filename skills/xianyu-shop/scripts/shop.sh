@@ -4,8 +4,10 @@
 #   shop.sh task <模板名> <商品代号> [k=v...]  按模板生成任务单到 $SHOP_DIR/tasks/
 #   shop.sh dispatch <角色> <任务单>         按配置派给该角色的 agent，后台跑，日志进 tasks/logs/
 #   shop.sh pages <文件> <输出目录> [页码...]  Word/PDF 转页面图（无窗口）
-#   shop.sh pack <成品目录> <价格>            把 listing.md / main.png / shots 整理成上架包
-#   shop.sh publish <成品目录> [--dry-run]    易店上架 + 配自动发货
+#   shop.sh pack <成品目录> <价格> [--account b]   把 listing.md / main.png / shots 整理成上架包；
+#                                            --account 用 acct-b/ 里的变体文案和主图，包放在 acct-b/
+#   shop.sh publish <成品目录> [--account b] [--dry-run]   易店上架 + 配自动发货（--account 发到 b 账号的店）
+#   shop.sh accounts                         列出易店账号（main + YIDIAN_ACCOUNTS）
 #   shop.sh price                            在配置区间里随机给一个价格
 #   shop.sh stats                            拉一次易店在售数据
 #   shop.sh workbench [端口]                 打开本机工作台网页（默认 8765）
@@ -22,7 +24,7 @@ cmd=$1; shift
 if [ -z "$CONF" ] || [ ! -f "$CONF" ]; then
   echo "还没有店铺配置。先按 references/onboarding.md 走一遍首次设置，生成 shop-config.env。"; exit 2
 fi
-source "$CONF"; export SHOP_DIR YIDIAN_NICK YIDIAN_ADDRESS
+set -a; source "$CONF"; set +a
 QUARK="node $HOME/.agents/skills/quarkclouddrive/scripts/quark-drive.cjs"
 
 ok(){ echo "✓ $1"; }; bad(){ echo "✗ $1"; FAIL=1; }
@@ -49,7 +51,11 @@ doctor)
     zsh -ic "command -v $bin" >/dev/null 2>&1 && ok "角色 $r → $a" || bad "角色 $r → $a，但找不到命令 $bin"
   done
   [ -f "$HOME/.config/yidian/token" ] || [ -n "$YIDIAN_TOKEN" ] || bad "易店 token 没放（店主本人放到 ~/.config/yidian/token）"
-  python3 "$HERE/yidian_api.py" list >/dev/null 2>&1 && ok "易店登录" || bad "易店连不上：token 过期或没放，店主本人重新放一次"
+  YIDIAN_ACCOUNT=main python3 "$HERE/yidian_api.py" list >/dev/null 2>&1 && ok "易店登录（主店）" || bad "易店连不上（主店）：token 过期或没放，店主本人重新放一次"
+  for a in ${=YIDIAN_ACCOUNTS}; do
+    [ -n "${(P)${:-YIDIAN_NICK_$a}}" ] || { bad "账号 $a 没配 YIDIAN_NICK_$a"; continue; }
+    YIDIAN_ACCOUNT=$a python3 "$HERE/yidian_api.py" list >/dev/null 2>&1 && ok "易店登录（$a）" || bad "易店连不上（$a）：店主本人把 token 放到 ~/.config/yidian/token-$a"
+  done
   # 夸克授权按 agent 渠道分开，只能由各 agent 自己查自己的；不借用别的 agent 的授权。
   me=$(cd "$SHOP_DIR" && ${=QUARK} resolve-agent 2>&1 | grep -o 'QK_AGENT_ID=.*' | cut -d= -f2)
   out=$(cd "$SHOP_DIR" && ${=QUARK} get-user-info 2>/dev/null | grep -v compdef)
@@ -89,7 +95,14 @@ pages)
   esac
   swift "$HERE/pdf_pages.swift" "$PDF" "$OUT" "$@" 2>/dev/null | grep pages; echo "PDF: $PDF";;
 pack)
-  d=$1; price=$2; [ -f "$d/listing.md" ] && [ -f "$d/main.png" ] && [ -f "$d/delivery.md" ] || { echo "$d 里要有 listing.md、main.png、delivery.md"; exit 1; }
+  d=${1%/}; price=$2
+  if [ "$3" = --account ] && [ -n "$4" ] && [ "$4" != main ]; then
+    v="$d/acct-$4"; [ -f "$v/listing.md" ] && [ -f "$v/main.png" ] || { echo "$v 里要有变体的 listing.md 和 main.png（先派 copy-variant / images-variant）"; exit 1; }
+    cp "$d/delivery.md" "$v/delivery.md"
+    for x in "$d"/shots "$d"/preview-*.jpg; do [ -e "$v/${x:t}" ] || ln -s "../${x:t}" "$v/${x:t}"; done
+    d=$v
+  fi
+  [ -f "$d/listing.md" ] && [ -f "$d/main.png" ] && [ -f "$d/delivery.md" ] || { echo "$d 里要有 listing.md、main.png、delivery.md"; exit 1; }
   sed -n '1s/^# //p' "$d/listing.md" > "$d/title.txt"
   awk '/^```text/{f=1;next}/^```/{f=0}f' "$d/listing.md" > "$d/body.txt"
   link=$(grep -o 'https://pan.quark.cn/s/[A-Za-z0-9]*' "$d/delivery.md" | head -1); [ -n "$link" ] || { echo "delivery.md 里没有夸克分享链接"; exit 1; }
@@ -97,14 +110,21 @@ pack)
   printf '{"category":"电子资料","price":%s,"share_url":"%s"}\n' "$price" "$link" > "$d/manifest.json"
   sips -s format jpeg -s formatOptions 85 -Z 1000 "$d/main.png" --out "$d/main-upload.jpg" >/dev/null
   echo "标题：$(cat $d/title.txt)（$(python3 -c 'import sys;print(len(open(sys.argv[1],encoding="utf-8").read().strip()))' "$d/title.txt") 字）"; echo "价格：$price  发货：$link"; echo "配图：$(ls $d/shots/*.jpg 2>/dev/null | wc -l | tr -d ' ') 张";;
+accounts)
+  echo "main  ${YIDIAN_LABEL:-主店}  $YIDIAN_NICK  $([ -f ~/.config/yidian/token ] && echo 有token || echo 缺token)"
+  for a in ${=YIDIAN_ACCOUNTS}; do n=${(P)${:-YIDIAN_NICK_$a}}; l=${(P)${:-YIDIAN_LABEL_$a}}
+    echo "$a  ${l:-$a}  ${n:-（没配 YIDIAN_NICK_$a）}  $([ -f ~/.config/yidian/token-$a ] && echo 有token || echo 缺token)"; done;;
 publish)
-  d=$1; shift; python3 "$HERE/yidian_api.py" publish "$d" --skip-review "$@" || exit $?
+  d=${1%/}; shift; acct=main
+  if [ "$1" = --account ]; then acct=$2; shift 2; fi
+  item=$d; [ $acct = main ] || d="$d/acct-$acct"
+  YIDIAN_ACCOUNT=$acct python3 "$HERE/yidian_api.py" publish "$d" --skip-review "$@" || exit $?
   # 上架成功后把品类标签并进 data/catalog.json
-  if [ -f "$d/published.json" ] && [ -f "$d/tags.json" ]; then
-    python3 - "$d" "$SHOP_DIR/data/catalog.json" <<'PY'
+  if [ -f "$d/published.json" ] && [ -f "$item/tags.json" ]; then
+    python3 - "$d" "$SHOP_DIR/data/catalog.json" "$item" "$acct" <<'PY'
 import json,os,sys
-d,cp=sys.argv[1],sys.argv[2]
-pub=json.load(open(f"{d}/published.json")); tags=json.load(open(f"{d}/tags.json",encoding="utf-8"))
+d,cp,item,acct=sys.argv[1:5]
+pub=json.load(open(f"{d}/published.json")); tags=dict(json.load(open(f"{item}/tags.json",encoding="utf-8")),shop=acct)
 gid=str(pub.get("goods_id") or "")
 if gid:
     cat=json.load(open(cp,encoding="utf-8")) if os.path.exists(cp) else {}
