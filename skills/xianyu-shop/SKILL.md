@@ -33,7 +33,7 @@ description: 闲鱼虚拟资料店的总控流程：首次设置引导、开工�
 
 | 步 | 谁 | 怎么做 | 交付 | 验收要点 |
 |---|---|---|---|---|
-| 1 选品 | 店主 + 总调度 | 对标店找卖得好的品，记进线索库；只搜店主给的词 | 线索库一行：对标链接、货源、状态 | 不在红线品类里 |
+| 1 选品 | 店主 + 总调度 | 对标店找卖得好的品，记进线索库；只搜店主给的词；去哪看需求、去哪找货见 references/sourcing-channels.md | 线索库一行：对标链接、货源、状态 | 不在红线品类里 |
 | 2 查货源 + 打标签 | 货源 | `shop.sh task sourcing-check <代号> BENCHMARK_URL=… SOURCE=…`（SOURCE 写网盘里的文件/文件夹名，或夸克分享链接） → `dispatch sourcer` | `check.md`、`tags.json` | 品类标签按 [taxonomy.md](references/taxonomy.md) 填齐；每个文件都有结论；有别人出处的剔掉。**整件不能做就停在这里，告诉店主为什么** |
 | 3 下载转页 | 货源 | `task fetch-pages <代号>` → `dispatch sourcer` | `pages/` + `pages/index.md` | 图清楚、无水印；每个文件至少一页 |
 | 4 写文案 | 写手 | `task copy <代号> BENCHMARK_URL=…` → `dispatch writer` | `listing.md` | 标题 25–30 字；份数页数和 check.md 一致；无假年份；老教材写清 |
@@ -101,3 +101,4 @@ shop.sh dispatch writer "$t"
 - 2026-11-22 v1.6：多账号。一个易店账号绑一个闲鱼店，配置 YIDIAN_ACCOUNTS；其他店发变体（copy-variant、images-variant），pack/publish 加 `--account`；orders、stats 合并各店并标「@账号」。
 - 2026-11-22 v1.7：多账号标记——配置加 `SHOP_ACCOUNT`、`FEISHU_WIKI_REPORTS_NODE`；选品表、线索库加「账号」列；知识库分「通用 / 账号1 / 账号2」，选品报告同步到本账号目录。
 - 2026-11-22 v1.8：店主把影视剧、动画、付费课、出版物、名师/机构/品牌资料、别人正在卖的付费产品从「不碰」里删掉；sourcing-check 跟着改。
+- 2026-11-22 v1.9：加 references/sourcing-channels.md（看需求的来源、找货渠道及各自特点、找货口径、记在哪）。
