@@ -141,8 +141,9 @@ def publish(d, dry=False, skip_review=False, at=None):
             print(f"跳过（复核未通过：{verdict or '没有 review.txt'}）", d); return
     title = open(f"{d}/title.txt", encoding="utf-8").read().strip().splitlines()[0].strip()
     body = open(f"{d}/body.txt", encoding="utf-8").read().strip()
-    wp = open(f"{d}/delivery.txt", encoding="utf-8").read().strip()
     m = json.load(open(f"{d}/manifest.json", encoding="utf-8"))
+    manual = bool(m.get("manual"))  # 人工发货：不配自动发货，正文不能写秒发/自动发货
+    wp = "" if manual else open(f"{d}/delivery.txt", encoding="utf-8").read().strip()
     cat = m.get("category", "电子资料"); cat = CATE_ALIAS.get(cat, cat)
     if cat not in CATE: sys.exit(f"不认识的分类：{cat}（只能是 {list(CATE)}）")
     price = float(m.get("price", 1))
@@ -157,7 +158,8 @@ def publish(d, dry=False, skip_review=False, at=None):
         words = [w.strip().lower() for w in open(bw, encoding="utf-8") if w.strip() and not w.startswith("#")]
         hit = [w for w in words if w in (title + "\n" + body).lower()]
         if hit: sys.exit(f"标题或正文含闲鱼违禁词 {hit}，不发（见 banned-words.txt）")
-    if "pan.quark.cn/s/" not in wp and not any(k in wp for k in ("feishu.cn/docx/", "feishu.cn/wiki/")):
+    if manual and any(k in title + body.replace("不是自动发货", "") for k in ("秒发", "自动发货", "自动发")): sys.exit("人工发货的品，标题正文不能写秒发/自动发货")
+    if not manual and "pan.quark.cn/s/" not in wp and not any(k in wp for k in ("feishu.cn/docx/", "feishu.cn/wiki/")):
         sys.exit("delivery.txt 里没有夸克分享链接或飞书文档链接")
     if any(x["title"] == title for x in list_live(title)):
         sys.exit(f"易店里已有同名商品：{title}")
@@ -174,7 +176,7 @@ def publish(d, dry=False, skip_review=False, at=None):
     p = dict(address=DEFAULTS["address"], attrs=[], cate_id=[CATE[cat]], categoryName=cat, dsfabu_open=1 if at else 0, dsfabu_time=at or "",
              freight=DEFAULTS["freight"], id=0, is_virtual=0, items=[], nick=DEFAULTS["nick"], nick_id=DEFAULTS["nick"],
              other="", polishing_open=0, polishing_time=0, postage=DEFAULTS["postage"], price=f"{price:.2f}",
-             quan=DEFAULTS["quan"], quans=DEFAULTS["quan"], sellingxin=False, slider_image=urls, spec_type=0,
+             quan=int(m.get("quan") or DEFAULTS["quan"]), quans=int(m.get("quan") or DEFAULTS["quan"]), sellingxin=False, slider_image=urls, spec_type=0,
              store_info=body, store_name=title, virtual_type=0)
     req("POST", "/adminapi/product/product_goods/0", p)
     if at:
@@ -201,15 +203,16 @@ def publish(d, dry=False, skip_review=False, at=None):
         if hit: gid = hit[0]["id"]; break
     if not gid:
         sys.exit("已提交发布，但列表里没找到新商品，请人工去易店确认，不要重复发布")
-    dv = dict(DELIVER_TPL, goods_id=str(gid), wp_txt=wp)
-    req("POST", "/adminapi/product/product/0", dv)
+    if not manual:
+        dv = dict(DELIVER_TPL, goods_id=str(gid), wp_txt=wp)
+        req("POST", "/adminapi/product/product/0", dv)
     json.dump({"goods_id": gid, "title": title, "price": price, "images": urls,
                "time": time.strftime("%Y-%m-%d %H:%M:%S")}, open(f"{d}/published.json", "w"), ensure_ascii=False, indent=1)
     try:
         n = free_uploads(urls)
-        print(f"已上架并配置自动发货：{gid}  {title}（清掉易店照片存储 {n} 条上传记录）")
+        print(f"已上架{'（人工发货，没配自动发货）' if manual else '并配置自动发货'}：{gid}  {title}（清掉易店照片存储 {n} 条上传记录）")
     except Exception as e:
-        print(f"已上架并配置自动发货：{gid}  {title}（清理照片存储失败，不影响商品：{e}）")
+        print(f"已上架{'（人工发货，没配自动发货）' if manual else '并配置自动发货'}：{gid}  {title}（清理照片存储失败，不影响商品：{e}）")
 
 
 ORDER_STATUS = {1: "待发货", 2: "待收货", 3: "交易完成", 4: "交易关闭", 5: "退款中"}
